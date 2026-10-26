@@ -1,6 +1,6 @@
 # SPEC — Subscription Manager
 
-Status: **DRAFT v1, awaiting owner approval.**
+Status: **v1 approved 2026-10-26.**
 
 ## 1. Goal (required)
 One owner, on an iPhone (and desktop), keeps every subscription and trial in one structured place and decides what to keep or cancel.
@@ -120,4 +120,4 @@ Later (not v1): personal finance tracker transactions; iPhone Subscriptions scre
 | 2026-10-26 | EUR home currency with conversion; light+dark, phone+desktop; English UI | Owner | 2, 4 |
 | 2026-10-26 | Every AI finding goes to the review inbox before saving | Owner | 2.2 |
 | 2026-10-26 | Visual look defined in a separate chat; no design system here | Owner | 3.9 |
-| 2026-10-26 | Spec v1 approved | — pending — | all |
+| 2026-10-26 | Spec v1 approved | Owner | all |
