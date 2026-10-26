@@ -48,7 +48,7 @@ CLAUDE.md             # this file
 - The app writes only: its own Supabase tables listed in SPEC §2. Mailboxes are strictly read-only: never write, flag, move, delete or send mail.
 - Mailbox tokens and app passwords are stored encrypted server-side; email bodies are not stored.
 - Only redacted snippets go to AI providers (SPEC §3.4).
-- AI output never reaches `subscriptions` without owner acceptance in the review inbox.
+- AI output never changes the owner's data without an explicit owner confirmation: findings go through the review inbox, assistant actions through a confirm card (SPEC §3.7). The AI holds no database credentials and has only the closed action list.
 - Always paginate external queries.
 - No fake data, except fixtures inside tests.
 - Ask before adding any dependency not listed above; record approvals here.

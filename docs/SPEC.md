@@ -57,6 +57,9 @@ Web Push endpoint + keys per device.
 ### 2.7 `chat_messages`
 `role` (`user`/`assistant`), `content`.
 
+### 2.7b `ai_actions` (assistant proposals and audit log)
+`chat_message_id`, `action` (one of the closed list in §3.7), `params` (jsonb, validated against that action's schema), `state` (`proposed`, `confirmed`, `executed`, `cancelled`, `failed`), `result` (jsonb), `executed_at`. Every executed action leaves a row.
+
 ### 2.8 External systems (names used exactly)
 - **Gmail API**, scope `gmail.readonly` only.
 - **Microsoft Graph**, scope `Mail.Read` only.
@@ -73,7 +76,17 @@ Mailbox rule: the app **never** writes, flags, moves, deletes or sends mail.
 4. **Mail scan (on demand):** connect, press "Scan"; a local filter (sender/subject/keyword, date window) picks candidates; text is **redacted** (names, addresses, card numbers) and trimmed to snippets before any AI call.
 5. **Trial watch:** daily job checks trials and renewals; push N days before (default 3, editable) with the cancel steps.
 6. **Keep-or-cancel advice:** per subscription and a whole-portfolio view (cost, overlap, usage rating, trial status).
-7. **Chat:** questions answered from the owner's own subscription rows only.
+7. **AI assistant (chat that acts):** the owner types or dictates text ("I started a Notion trial today, 14 days, then €10/month") and asks questions about their own rows. The AI **proposes**; the owner **confirms every action**; nothing is written before a tap.
+   - Input: typed or dictated text only (iOS keyboard dictation). No files, screenshots or pasted emails in the chat in v1.
+   - Closed action list (no other action exists):
+     1. `add_subscription`, `update_subscription` (any §2.1 field, incl. trials, `just_trying`, cancel info).
+     2. `set_status` (`cancelled`, `paused`, `active`) and `delete_subscription`.
+     3. `accept_finding`, `reject_finding` (single or several by filter).
+     4. `start_mail_scan` (a connection + date window) and `set_alert_lead_days`.
+   - Flow: the model returns JSON validated with a schema (no reliance on native tool calling, which free models handle unevenly) → the server stores an `ai_actions` row in `proposed` → the chat shows an **action card** (plain-language summary + field diff + Confirm / Edit / Cancel) → on Confirm the server executes it with the owner's session (RLS applies). The AI never holds database credentials and cannot execute anything itself.
+   - Delete, cancel and bulk actions show the affected items by name on the card.
+   - Missing or ambiguous details (price? cycle?): the assistant asks a follow-up instead of guessing; dates are resolved to absolute dates and shown on the card.
+   - Redaction (§3.4) applies to anything sent to the AI.
 8. **Apple Card statement import:** CSV and PDF upload, recurring-charge detection, results go to the review inbox.
 9. **Look:** a separate chat defines it. Until then use neutral CSS variables in a single `theme` file so the look can be dropped in. No design system is built here.
 
@@ -85,6 +98,7 @@ Mailbox rule: the app **never** writes, flags, moves, deletes or sends mail.
 - Tokens expiring (Google "testing" mode refresh tokens last 7 days): connection shows "reconnect".
 - iOS push only works after Add to Home Screen; the app explains this on first run.
 - Single user: signups disabled except the owner's email.
+- Assistant: unknown action, invalid params, or a target that matches several rows → no card, the assistant asks which one. A card older than 24 h expires. If the item changed after the proposal, the card is re-validated and refused if stale. Free-model misreads are caught by the confirm step, never by trust.
 
 ## 5. Build order (required)
 Mode: Autonomous. Each step is its own branch and draft PR, passes gate 1 before the next starts, and gets a hand-off.
@@ -97,7 +111,7 @@ Mode: Autonomous. Each step is its own branch and draft PR, passes gate 1 before
 6. **Step 6 — Yahoo and iCloud (IMAP):** app-password connections, same flow.
 7. **Step 7 — Trial watch and push:** daily job, Web Push, PWA install. Check: a test trial triggers a push on the iPhone.
 8. **Step 8 — Keep-or-cancel advice.**
-9. **Step 9 — Chat with your subscriptions.**
+9. **Step 9 — AI assistant:** chat that answers questions and proposes actions (§3.7), action cards with confirm, `ai_actions` log. Needs Steps 2, 3, 4 and 7 to exist. Check: say "I started a Notion trial today, 14 days, then €10/month"; a card appears; Confirm creates it with the right dates; Cancel writes nothing; "delete Notion" asks for confirmation naming it.
 10. **Step 10 — Apple Card import:** CSV and PDF, recurring detection.
 11. **Release:** gates 3, 4, 5 (code review, final QA, visual check in light/dark × phone/desktop). Production merge needs the owner's OK.
 
@@ -121,3 +135,4 @@ Later (not v1): personal finance tracker transactions; iPhone Subscriptions scre
 | 2026-10-26 | Every AI finding goes to the review inbox before saving | Owner | 2.2 |
 | 2026-10-26 | Visual look defined in a separate chat; no design system here | Owner | 3.9 |
 | 2026-10-26 | Spec v1 approved | Owner | all |
+| 2026-10-26 | SPEC change: chat becomes an assistant that acts on the platform. Owner confirms every action; closed action list (add/edit, status/delete, accept/reject findings, start scan/set alert timing); text/dictation input only. Supersedes the "chat is read-only" wording and the Step 9 chat scope | Owner | 2.7b, 3.7, 4, 5 |
