@@ -55,3 +55,7 @@ CLAUDE.md             # this file
 - Run lint, build and tests before saying a step is done. Show the output.
 - Never start the next step or merge beyond what the approval mode allows.
 - The playbook repo (`claude-project-playbook`) is read-only: never edit it.
+
+## Language
+
+Chat with me in Italian. Write all code, comments, commit messages, docs, config files, skills and subagent prompts in English. Exception: deliverables explicitly meant for Italian readers stay in Italian.
